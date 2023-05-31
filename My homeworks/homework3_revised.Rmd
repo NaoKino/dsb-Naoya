@@ -113,7 +113,7 @@ You need to work with the `payments` and `members` tables and for now we just wa
 
 #### Answer: Theresa May has received the most amount of money, which is 2809765.4.
 
-```{r}
+#### I'm not sure but following code does work when conducting "Run current chunk", but does not work when I Knit it, so just for the temporaly measure, I will reject this code.
 
 # Loop through each table and print its contents
 for (table in tables) {
@@ -129,21 +129,31 @@ for (table in tables) {
   cat("\n")
 }
 
-# Extract the top 10 rows from the payments table
-query <- "SELECT value, category, member_id FROM payments ORDER BY value DESC LIMIT 10"
-results <- dbGetQuery(sky_westminster, query)
 
+```{r}
 # Extract the top 10 rows from the aggregated payments data with member details using dplyr
-results <- tbl(sky_westminster, "payments") %>%
-  group_by(member_id) %>%
-  summarise(total_value = sum(value)) %>%
-  arrange(desc(total_value)) %>%
-  slice_max(order_by = total_value, n = 10) %>%
-  inner_join(tbl(sky_westminster, "members"), by = c("member_id" = "id")) %>%
-  select(member_id, total_value, name)
+query_2 <- "
+  SELECT member_id, SUM(value) as total_value
+  FROM payments
+  GROUP BY member_id
+  ORDER BY total_value DESC
+  LIMIT 10
+"
+results_4 <- DBI::dbGetQuery(sky_westminster, query_2)
+
+# Check if the columns exist in the members table
+if (all(c("id", "name") %in% colnames(tbl(sky_westminster, "members")))) {
+  members <- tbl(sky_westminster, "members") %>%
+    collect()  # Add this line
+  results_4 <- results_4 %>%
+    inner_join(members, by = c("member_id" = "id")) %>%
+    select(member_id, total_value, name)
+} else {
+  stop("The columns 'id' and/or 'name' do not exist in the 'members' table.")
+}
 
 # Print the results
-print(results)
+print(results_4)
 ```
 
 ## Any `entity` that accounts for more than 5% of all donations?
@@ -678,6 +688,16 @@ contributions_tables <- base_url %>%
     -   Separate the `country_of_origin_parent_company` into two such that country and parent company appear in different columns for country-level analysis.
 
 ```{r}
+# Define a function to parse currency values
+parse_currency <- function(x){
+  x %>%
+    # Remove dollar signs
+    str_remove("\\$") %>%
+    # Remove all occurrences of commas
+    str_remove_all(",") %>%
+    # Convert to numeric
+    as.numeric()
+}
 
 # Check if scraping is allowed on the website
 paths_allowed("https://www.opensecrets.org")
@@ -694,7 +714,6 @@ contributions <- webpage %>%
   html_nodes("table") %>% # Identify the table in the webpage
   .[[1]] %>% # Select the first table
   html_table(fill = TRUE) # Convert the table to a data frame
-
 
 # Print column names
 glimpse(contributions)
@@ -713,17 +732,6 @@ contributions_changed <- contributions %>%
     "Repubs" = parse_currency(Repubs)
   )
 
-# Define a function to parse currency values
-parse_currency <- function(x){
-  x %>%
-    # Remove dollar signs
-    str_remove("\\$") %>%
-    # Remove all occurrences of commas
-    str_remove_all(",") %>%
-    # Convert to numeric
-    as.numeric()
-}
-
 glimpse(contributions_changed)
 
 ```
@@ -739,7 +747,9 @@ glimpse(contributions_changed)
 
 -   Map the `scrape_pac()` function over `urls` in a way that will result in a data frame called `contributions_all`.
 
--   Write the data frame to a csv file called `contributions-all.csv` in the `data` folder. Answer: Please find the code which satisfy instruction. However, some issues with writting the data frame to csv file, so I muted last part of code which is shown as below. #write.csv(contributions_all, file = "data/contributions-all.csv")
+-   Write the data frame to a csv file called `contributions-all.csv` in the `data` folder. 
+
+## Answer: Please find the code which satisfy instruction. However, some issues with writting the data frame to csv file, so I muted last part of code which is shown as below. #write.csv(contributions_all, file = "data/contributions-all.csv")
 
 ```{r}
 # Define the function
@@ -810,7 +820,6 @@ The website [https://www.consultancy.uk/jobs/](https://www.consultancy.uk/jobs) 
 ```{r}
 #| label: consulting_jobs_url
 #| eval: false
-#| "eval"と記載あるのをすべて消去
 
 library(robotstxt)
 paths_allowed("https://www.consultancy.uk") #is it ok to scrape?
@@ -848,7 +857,9 @@ url <- str_c(base_url, page)
 
 -   Map the `scrape_jobs()` function over `pages` in a way that will result in a data frame called `all_consulting_jobs`.
 
--   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder. Answer: Please find the code which satisfy instruction. However, some issues with writting the data frame to csv file, so I muted last part of code which is shown as below. #write.csv(all_consulting_jobs, file = "data/all_consulting_jobs.csv", row.names = FALSE)
+-   Write the data frame to a csv file called `all_consulting_jobs.csv` in the `data` folder. 
+
+## Answer: Please find the code which satisfy instruction. However, some issues with writting the data frame to csv file, so I muted last part of code which is shown as below. #write.csv(all_consulting_jobs, file = "data/all_consulting_jobs.csv", row.names = FALSE)
 
 ```{r}
 # Define a function to scrape job listings
