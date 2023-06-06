@@ -55,6 +55,8 @@ glimpse(bechdel)
 ```
 
 How many films fail/pass the test, both as a number and as a %?
+Answer: Out of 1394 films, 622 films passed the test while 772 films failed. This means that the pass rate for films is 44.6198%, and the failure rate is 55.3802%.
+
 
 ```{r}
 # Count the number of films that pass or fail the test
