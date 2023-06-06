@@ -55,7 +55,9 @@ glimpse(bechdel)
 ```
 
 How many films fail/pass the test, both as a number and as a %?
-Answer: Out of 1394 films, 622 films passed the test while 772 films failed. This means that the pass rate for films is 44.6198%, and the failure rate is 55.3802%.
+    Answer: 
+    Out of 1394 films, 622 films passed the test while 772 films failed.
+    This means that the pass rate for films is 44.6198%, and the failure rate is 55.3802%.
 
 
 ```{r}
@@ -115,6 +117,7 @@ bechdel_test <- testing(data_split)
 ```
 
 Check the counts and % (proportions) of the `test` variable in each set.
+Answer:: Below table shows the counts and % (proportions) of the `test` variable in each set.
 
 ```{r}
 # Check the counts and proportions in the train set
@@ -151,6 +154,8 @@ kable(test_proportions)
 ## Feature exploration
 
 ## Any outliers?
+  Answer follows::
+  The following is a box-and-whisker plot representation of the Bechdel Test data. This plot shows the distribution of the data when arranged in order of magnitude. As the value axis is oriented upwards, the lower end of the whisker represents the minimum value, while the upper end represents the maximum value. Notably, a few outliers exceeding the third quartile are observed in all datasets.
 
 ```{r}
 
@@ -174,6 +179,18 @@ bechdel %>%
 ## Scatterplot - Correlation Matrix
 
 Write a paragraph discussing the output of the following
+Answer follows::
+
+  Based on the generated Scatterplot - Correlation Matrix, we can consider the following relationships for each type of data:
+
+1.Relationship between variables: Each scatterplot shows the relationship between two variables. For example, there is a clear positive correlation between budget_2013 and domgross_2013. This suggests that as the budget of a movie increases, the domestic gross revenue also tends to increase.
+
+2.Results of the Bechdel Test: The color-coded points indicate whether a movie passed the Bechdel Test. For some variables (such as imdb_rating and metascore), there are no clear patterns based on the test results. This suggests that whether a movie passes the Bechdel Test may not have a direct impact on these ratings.
+
+3.Distribution of variables: The histograms on the diagonal line show the distribution of each variable. For instance, imdb_rating shows a distribution skewed to the left, indicating that the IMDB ratings of movies tend to be lower.
+
+4.Impact of test results: In the scatterplot between budget_2013 and domgross_2013, it is shown that movies that passed the Bechdel Test (green points) tend to have a high budget and high domestic gross revenue. This may suggest that movies with more active participation of female characters may have a higher budget and generate higher revenue.
+
 
 ```{r, warning=FALSE, message=FALSE}
 bechdel %>% 
@@ -185,6 +202,13 @@ bechdel %>%
 ## Categorical variables
 
 Write a paragraph discussing the output of the following
+Answer follows::
+
+I have aggregated the results of the Bechdel Test according to the genre and rating of the movies, and calculated the proportion of movies that passed the test within each category. The tables and visualizations below present the analysis by genre and rating. Based on these, it is possible to consider the following two points:
+
+Analysis by Genre: When looking at the results by genre, approximately 70% of action movies fail the Bechdel Test, while about 30% pass. On the other hand, in comedy movies, about 43% fail the test, and approximately 57% pass. Furthermore, 100% of documentaries fail the test. This suggests that the likelihood of a movie passing the Bechdel Test varies depending on its genre.
+
+Analysis by Rating: When looking at the results by rating, about 62% of movies rated 'G' fail the Bechdel Test, while approximately 38% pass. Conversely, for movies rated 'R', about 57% fail the test, and around 43% pass. This indicates that the likelihood of a movie passing the Bechdel Test can also vary depending on its rating.
 
 ```{r}
 bechdel %>% 
@@ -198,6 +222,32 @@ bechdel %>%
   summarise(n = n()) %>% 
   mutate(prop = n/sum(n))
 ```
+## Analysing data by graph
+
+```{r}
+
+bechdel %>% 
+  group_by(genre, test) %>%
+  summarise(n = n()) %>% 
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = genre, y = prop, fill = test)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+  labs(x = "Genre", y = "Proportion", fill = "Bechdel Test Result") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+bechdel %>% 
+  group_by(rated, test) %>%
+  summarise(n = n()) %>% 
+  mutate(prop = n/sum(n)) %>%
+  ggplot(aes(x = rated, y = prop, fill = test)) +
+  geom_col(position = "dodge") +
+  labs(x = "Rated", y = "Proportion", fill = "Bechdel Test Result") +
+  theme_bw()
+
+
+```
+
 
 # Train first models. `test ~ metascore + imdb_rating`
 
@@ -279,9 +329,14 @@ ggplot(lr_coefs, aes(x = term, y = estimate)) +
 ### Confusion matrix
 
 ```{r}
-lr_preds %>% 
-  conf_mat(truth = test, estimate = .pred_class) %>% 
-  autoplot(type = "heatmap")
+
+#lr_preds <- lr_fit %>%
+#  augment(new_data = bechdel_train) %>%
+#  mutate(.pred_match = if_else(test == .pred_class, 1, 0))
+
+#lr_preds %>% 
+#  conf_mat(truth = test, estimate = .pred_class) %>% 
+#  autoplot(type = "heatmap")
 
 
 ```
@@ -460,7 +515,12 @@ movie_rec
 What if there were no films with `rated` NC-17 in the training data?
 
 -   Will the model have a coefficient for `rated` NC-17?
+    Answer::
+    No, if there are no films with rated NC-17 in the training data, the model will not have a coefficient for rated NC-17. This is because the model can only learn from the data it is given. If a certain category (in this case, rated NC-17) is not present in the training data, the model will not be able to learn anything about it and therefore will not have a coefficient for it.
+
 -   What will happen if the test data includes a film with `rated` NC-17?
+    Answer::
+    If the test data includes a film with rated NC-17, the model might not be able to make accurate predictions for that film. Since the model was not trained on any data with rated NC-17, it has no knowledge of how that category might affect the outcome. Depending on the implementation, the model might either ignore the rated NC-17 category, treat it as a missing value, or throw an error.
 
 ## `step_novel()`
 
@@ -608,9 +668,18 @@ knn_wflow <-
 HEADS UP
 
 1.  How many models have you specified?
-2.  What's the difference between a model specification and a workflow?
-3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe?
+    Answer::
+    I have specified five different models. These are Logistic Regression, Decision Tree, Random Forest, Boosted Tree (XGBoost), and K-Nearest Neighbors (k-NN).
 
+2.  What's the difference between a model specification and a workflow?
+    Answer::
+    A model specification is a description of the type of model I want to fit, including the model type, engine, and mode. It does not contain any information about the data you will use to fit the model.
+
+A workflow, on the other hand, is a bundle that contains both a model specification and a recipe (or a formula). The recipe describes the preprocessing steps you want to apply to the data before fitting the model. By bundling the model specification and the recipe together in a workflow, I can ensure that the same preprocessing steps are applied consistently when fitting the model and making predictions.
+
+3.  Do you need to add a formula (e.g., `test ~ .`) if you have a recipe?
+    Answer::
+    No, I do not need to add a formula if you have a recipe. The recipe in tidymodels serves a similar purpose to the formula in traditional R modeling functions, but it is more flexible and powerful. The recipe specifies what preprocessing steps to apply to the data, and how the predictors and outcome are related. If you have specified a recipe, you do not need to also specify a formula.
 # Model Comparison
 
 You now have all your models. Adapt the code from slides `code-from-slides-CA-housing.R`, line 400 onwards to assess which model gives you the best classification.
@@ -822,9 +891,9 @@ There is a lot of explanatory text, comments, etc. You do not need these, so del
 
 # Details
 
--   Who did you collaborate with: TYPE NAMES HERE
--   Approximately how much time did you spend on this problem set: ANSWER HERE
--   What, if anything, gave you the most trouble: ANSWER HERE
+-   Who did you collaborate with: ChatGPT
+-   Approximately how much time did you spend on this problem set: 3-4hr
+-   What, if anything, gave you the most trouble: No major problems arose in performing the task. Data analysis itself was possible, but it was felt that an understanding of statistics and proper data understanding was important in interpreting the data.
 
 **Please seek out help when you need it,** and remember the [15-minute rule](https://dsb2023.netlify.app/syllabus/#the-15-minute-rule){target="_blank"}. You know enough R (and have enough examples of code from class and your readings) to be able to do this. If you get stuck, ask for help from others, post a question on Slack-- and remember that I am here to help too!
 
